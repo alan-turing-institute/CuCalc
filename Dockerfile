@@ -32,18 +32,20 @@ RUN nvcc -V && \
     which nvidia-smi && \
     nvidia-smi 2> /dev/null || echo "No NVidia card detected!"
 
+# Install Julia kernel then list all available kernels
+RUN julia -e 'using Pkg; Pkg.add("IJulia");' && \
+    mv /root/.local/share/jupyter/kernels/julia-* /usr/local/share/jupyter/kernels && \
+    jupyter kernelspec list
+
 # Install packages into system Python: tensorflow, Theano, Keras and PyTorch
 RUN pip3 install tensorflow>2.0 theano keras torch
 
 # Test installed Python packages
 COPY tests /tests
-RUN python3 /tests/theano_gputest.py
-RUN python3 /tests/tensorflow_gputest.py
-
-# Install Julia kernel then list all available kernels
-RUN julia -e 'using Pkg; Pkg.add("IJulia");' && \
-    mv /root/.local/share/jupyter/kernels/julia-* /usr/local/share/jupyter/kernels && \
-    jupyter kernelspec list
+RUN python3 /tests/test_gpu_keras.py
+RUN python3 /tests/test_gpu_pytorch.py
+RUN python3 /tests/test_gpu_tensorflow.py
+RUN python3 /tests/test_gpu_theano.py
 
 # Start CuCalc
 CMD /root/run.py
