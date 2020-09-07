@@ -42,7 +42,6 @@ RUN pip3 install tensorflow>2.0 theano keras torch
 
 # Test installed Python packages
 COPY tests /tests
-RUN python3 /tests/test_gpu_keras.py
 RUN python3 /tests/test_gpu_pytorch.py
 RUN python3 /tests/test_gpu_tensorflow.py
 RUN python3 /tests/test_gpu_theano.py
