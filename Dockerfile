@@ -1,83 +1,89 @@
+# Start from the official SageMath docker image (https://github.com/sagemathinc/cocalc-docker/blob/master/Dockerfile)
+# Note that this is currently using Ubuntu 20.04 as the base image
 FROM sagemathinc/cocalc
+
+# Add the NVIDIA machine-learning repository, implicitly trusting the signing key from download.nvidia.com
+RUN curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/7fa2af80.pub | apt-key add - 2> /dev/null && \
+    add-apt-repository "deb http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64 /"
+
 
 # Install useful utilities missing in original CoCalc image
 # CUDA 9.2 is not officially supported on ubuntu 18.04 yet, we use the ubuntu 17.10 repository for CUDA instead.
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        gnupg2 curl ca-certificates \
-        nano gnuplot \
-        g++-5 gcc-5 \
-        libglib2.0-0 libxext6 libsm6 libxrender1 \
-        mercurial subversion \
-        epstool && \
-    curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1710/x86_64/7fa2af80.pub | apt-key add - && \
-    echo "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1710/x86_64 /" > /etc/apt/sources.list.d/cuda.list && \
-    echo "deb https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1604/x86_64 /" > /etc/apt/sources.list.d/nvidia-ml.list && \
-    apt-get purge --autoremove -y curl && \
-    rm -rf /var/lib/apt/lists/*
+        # gnupg2 curl ca-certificates \
+        # nano gnuplot \
+        # g++-5 gcc-5 \
+        # libglib2.0-0 libxext6 libsm6 libxrender1 \
+        # mercurial subversion \
+        # epstool && \
+
+# Add the CUDA repos, implicitly trusting the signing key from download.nvidia.com
+# # Note that there is no machine-learning repo for Ubuntu 20.04 yet
+# RUN apt-get update && \
+#     apt-get install -y --no-install-recommends && \
+#     curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/7fa2af80.pub | apt-key add - 2> /dev/null && \
+#     # echo "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64 /" > /etc/apt/sources.list.d/nvidia-cuda.list && \
+#     add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64 /" && \
+#     # echo "http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/x86_64 /" > /etc/apt/sources.list.d/nvidia-ml.list && \
+#     add-apt-repository "deb http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64 /" && \
+#     rm -rf /var/lib/apt/lists/*
 
 
-ENV CUDA_VERSION 9.2.148
-ENV CUDA_PKG_VERSION 9-2=$CUDA_VERSION-1
-ENV NCCL_VERSION 2.2.13
+# Install the NVidia CUDA toolkit and driver from the main Ubuntu repository
+# Note that we have to specify the driver version
+RUN apt-get update && \
+    apt-get install -y \
+      nvidia-cuda-toolkit \
+      nvidia-headless-440 \
+      nvidia-utils-440
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        cuda-cudart-$CUDA_PKG_VERSION \
-        cuda-cudart-dev-$CUDA_PKG_VERSION \
-        cuda-cupti-$CUDA_PKG_VERSION \
-        cuda-libraries-$CUDA_PKG_VERSION \
-        cuda-nvtx-$CUDA_PKG_VERSION \
-        libnccl2=$NCCL_VERSION-1+cuda9.2 \
-        cuda-libraries-dev-$CUDA_PKG_VERSION \
-        cuda-nvml-dev-$CUDA_PKG_VERSION \
-        cuda-minimal-build-$CUDA_PKG_VERSION \
-        cuda-command-line-tools-$CUDA_PKG_VERSION \
-        libnccl-dev=$NCCL_VERSION-1+cuda9.2 && \
-    ln -s cuda-9.2 /usr/local/cuda && \
-    rm -rf /var/lib/apt/lists/*
+# Install CuDNN from the NVidia machine-learning repository
+# Note that we have to specify the library version
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+      libcudnn7=7.6.5.32-1+cuda10.1 \
+      libcudnn7-dev=7.6.5.32-1+cuda10.1
 
-RUN echo "/usr/local/nvidia/lib" >> /etc/ld.so.conf.d/nvidia.conf && \
-    echo "/usr/local/nvidia/lib64" >> /etc/ld.so.conf.d/nvidia.conf
+# Clean up apt files
+RUN apt-get autoremove -y --purge && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    rm -rf /var/cache/apt/archives/*
 
-#Install CUDA path variables
-ENV PATH /usr/local/nvidia/bin:/usr/local/cuda/bin:${PATH}
-ENV LIBRARY_PATH /usr/local/cuda/lib64/stubs
-ENV LD_LIBRARY_PATH /usr/local/nvidia/lib:/usr/local/nvidia/lib64
+# List the version of CUDA that we have installed
+RUN nvcc -V && \
+    which nvidia-smi && \
+    nvidia-smi 2> /dev/null || echo "No NVidia card detected!"
 
-# nvidia-container-runtime
-ENV NVIDIA_VISIBLE_DEVICES all
-ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
-ENV NVIDIA_REQUIRE_CUDA "cuda>=9.2"
+# Install packages into system Python: tensorflow, Theano, Keras and PyTorch
+RUN pip3 install tensorflow>2.0 theano keras torch
 
-#Install CuDNN (using this hack since CuDNN does not support 17.04)
-ENV CUDNN_VERSION 7.2.1.38
-LABEL com.nvidia.cudnn.version="${CUDNN_VERSION}"
+# Test installed Python packages
+COPY tests /tests
+RUN python3 /tests/theano_gputest.py
+RUN python3 /tests/tensorflow_gputest.py
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-            libcudnn7=$CUDNN_VERSION-1+cuda9.2 \
-            libcudnn7-dev=$CUDNN_VERSION-1+cuda9.2 && \
-    rm -rf /var/lib/apt/lists/*
 
-#Install Anaconda
-RUN echo 'export PATH=/opt/conda/bin:$PATH' > /etc/profile.d/conda.sh && \
-    wget --quiet https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O ~/anaconda.sh && \
-    /bin/bash ~/anaconda.sh -b -p /opt/conda && \
-    rm ~/anaconda.sh
+# #Install Anaconda
+# RUN echo 'export PATH=/opt/conda/bin:$PATH' > /etc/profile.d/conda.sh && \
+#     wget --quiet https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O ~/anaconda.sh && \
+#     /bin/bash ~/anaconda.sh -b -p /opt/conda && \
+#     rm ~/anaconda.sh
 
-#Install Python packages (incl. Theano, Keras and PyTorch)
-RUN /opt/conda/bin/conda install -y ipykernel matplotlib pydot-ng theano pygpu bcolz paramiko keras seaborn graphviz scikit-learn cudatoolkit numba
-RUN /opt/conda/bin/conda create -n xeus python=3.6 ipykernel xeus-cling -c QuantStack -c conda-forge
-RUN /opt/conda/bin/conda create -n pytorch python=3.6 ipykernel pytorch torchvision cuda90 -c pytorch
+# #Install Python packages (incl. Theano, Keras and PyTorch)
+# RUN /opt/conda/bin/conda install -y ipykernel matplotlib pydot-ng theano pygpu bcolz paramiko keras seaborn graphviz scikit-learn cudatoolkit numba
+# RUN /opt/conda/bin/conda create -n xeus python=3.6 ipykernel xeus-cling -c QuantStack -c conda-forge
+# RUN /opt/conda/bin/conda create -n pytorch python=3.6 ipykernel pytorch torchvision cuda90 -c pytorch
 
-ENV PATH /opt/conda/bin:${PATH}
-ENV PATH /usr/local/cuda/bin:${PATH}
-RUN echo 'export PATH=/usr/local/cuda/bin${PATH:+:${PATH}}' >> /cocalc/src/smc_pyutil/smc_pyutil/templates/linux/bashrc && \
-    echo 'export PATH=/opt/conda/bin${PATH:+:${PATH}}' >> /cocalc/src/smc_pyutil/smc_pyutil/templates/linux/bashrc
+# ENV PATH /opt/conda/bin:${PATH}
+# ENV PATH /usr/local/cuda/bin:${PATH}
+# RUN echo 'export PATH=/usr/local/cuda/bin${PATH:+:${PATH}}' >> /cocalc/src/smc_pyutil/smc_pyutil/templates/linux/bashrc && \
+#     echo 'export PATH=/opt/conda/bin${PATH:+:${PATH}}' >> /cocalc/src/smc_pyutil/smc_pyutil/templates/linux/bashrc
 
-#Add Conda kernel to Jupyter
-RUN python -m ipykernel install --prefix=/usr/local/ --name "anaconda_kernel"
+# #Add Conda kernel to Jupyter
+# RUN python -m ipykernel install --prefix=/usr/local/ --name "anaconda_kernel"
 
-#Start CuCalc
+# #Start CuCalc
 
-CMD /root/run.py
+# CMD /root/run.py
 
-EXPOSE 80 443
+# EXPOSE 80 443
