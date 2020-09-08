@@ -7,13 +7,14 @@ RUN curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu20
     add-apt-repository "deb http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64 /" && \
     add-apt-repository "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64 /"
 
+# Remove any existing NVidia packages
+RUN apt-get --purge remove "*nvidia*"
 
 # Install the NVidia CUDA toolkit and driver from the main Ubuntu repository
 # Note that we have to specify the driver version
 RUN apt-get update && \
     apt-get install -y \
-        cuda
-
+        cuda-11-0
     #   nvidia-cuda-toolkit \
     #   nvidia-headless-440 \
     #   nvidia-utils-440
@@ -33,6 +34,10 @@ RUN apt-get autoremove -y --purge && \
     rm -rf /var/lib/apt/lists/* && \
     rm -rf /var/cache/apt/archives/*
 
+# Ensure that CUDA paths are available
+ENV PATH /usr/local/cuda/bin:${PATH}
+ENV LD_LIBRARY_PATH /usr/local/cuda/lib64:${LD_LIBRARY_PATH}
+
 # List the version of CUDA that we have installed
 RUN nvcc -V && \
     which nvidia-smi && \
@@ -48,11 +53,6 @@ RUN pip3 install tensorflow>2.0 theano keras torch --no-binary :all:
 
 # Add tests for installed Python packages
 COPY tests /tests
-
-# Install CUDA path variables
-ENV PATH /usr/local/nvidia/bin:/usr/local/cuda/bin:${PATH}
-ENV LIBRARY_PATH /usr/local/cuda/lib64/stubs
-ENV LD_LIBRARY_PATH /usr/local/nvidia/lib:/usr/local/nvidia/lib64:${LD_LIBRARY_PATH}
 
 # Start CuCalc
 CMD /root/run.py
