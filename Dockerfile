@@ -44,7 +44,7 @@ RUN julia -e 'using Pkg; Pkg.add("IJulia");' && \
     jupyter kernelspec list
 
 # Install packages into system Python: tensorflow, Theano, Keras and PyTorch
-RUN pip3 install tensorflow>2.0 theano keras torch
+RUN pip3 install tensorflow>2.0 theano keras torch --no-binary :all:
 
 # Add tests for installed Python packages
 COPY tests /tests
