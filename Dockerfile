@@ -8,25 +8,28 @@ RUN curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu20
     add-apt-repository "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64 /"
 
 # Remove any existing NVidia packages
-RUN apt-get --purge remove "*nvidia*"
+RUN apt-get update && \
+    apt-get --purge remove "*nvidia*"
 
 # Install the NVidia CUDA toolkit and driver from the main Ubuntu repository
 # Note that we have to specify the driver version
 RUN apt-get update && \
     apt-get install -y \
         cuda-11-0
-    #   nvidia-cuda-toolkit \
-    #   nvidia-headless-440 \
-    #   nvidia-utils-440
 
-# Install CuDNN from the NVidia machine-learning repository
+#   nvidia-cuda-toolkit \
+#   nvidia-headless-440 \
+#   nvidia-utils-440
+
+# Install CuDNN and TensorRT from the NVidia machine-learning repository
 # Note that we have to specify the library version
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         libcudnn8=8.0.3.33-1+cuda11.0 \
-        libcudnn8-dev=8.0.3.33-1+cuda11.0
-        # libcudnn7=7.6.5.32-1+cuda10.1 \
-        # libcudnn7-dev=7.6.5.32-1+cuda10.1
+        libcudnn8-dev=8.0.3.33-1+cuda11.0 \
+        libnvinfer7=7.2.0-1+cuda11.0 \
+        libnvinfer-dev=7.2.0-1+cuda11.0 \
+        libnvinfer-plugin7=7.2.0-1+cuda11.0
 
 # Clean up apt files
 RUN apt-get autoremove -y --purge && \
