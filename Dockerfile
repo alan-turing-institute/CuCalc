@@ -2,34 +2,30 @@
 # Note that this is currently using Ubuntu 20.04 as the base image
 FROM sagemathinc/cocalc
 
-# Add the NVIDIA machine-learning and CUDA repositories, implicitly trusting the signing key from download.nvidia.com
-RUN curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/7fa2af80.pub | apt-key add - 2> /dev/null && \
-    add-apt-repository "deb http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64 /" && \
-    add-apt-repository "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64 /"
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gnupg2 curl ca-certificates && \
+    curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub | apt-key add - && \
+    echo "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64 /" > /etc/apt/sources.list.d/cuda.list && \
+    echo "deb https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64 /" > /etc/apt/sources.list.d/nvidia-ml.list && \
+    apt-get purge --autoremove -y curl && \
+    rm -rf /var/lib/apt/lists/*
 
-# Remove any existing NVidia packages
-RUN apt-get update && \
-    apt-get --purge remove "*nvidia*"
+RUN apt-get install --no-install-recommends nvidia-driver-450
 
-# Install the NVidia CUDA toolkit and driver from the main Ubuntu repository
-# Note that we have to specify the driver version
-RUN apt-get update && \
-    apt-get install -y \
-        cuda-11-0
+RUN apt-get install --no-install-recommends \
+    cuda-10-1 \
+    libcudnn7=7.6.5.32-1+cuda10.1  \
+    libcudnn7-dev=7.6.5.32-1+cuda10.1
 
-#   nvidia-cuda-toolkit \
-#   nvidia-headless-440 \
-#   nvidia-utils-440
+RUN sudo apt-get install -y --no-install-recommends \
+    libnvinfer6=6.0.1-1+cuda10.1 \
+    libnvinfer-dev=6.0.1-1+cuda10.1 \
+    libnvinfer-plugin6=6.0.1-1+cuda10.1
 
-# Install CuDNN and TensorRT from the NVidia machine-learning repository
-# Note that we have to specify the library version
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        libcudnn8=8.0.3.33-1+cuda11.0 \
-        libcudnn8-dev=8.0.3.33-1+cuda11.0 \
-        libnvinfer7=7.2.0-1+cuda11.0 \
-        libnvinfer-dev=7.2.0-1+cuda11.0 \
-        libnvinfer-plugin7=7.2.0-1+cuda11.0
+ENV PATH /usr/local/nvidia/bin:/usr/local/cuda/bin:${PATH}
+ENV LD_LIBRARY_PATH /usr/local/nvidia/lib:/usr/local/nvidia/lib64:${LD_LIBRARY_PATH}
+
+Run pip3 install tensorflow
 
 # Clean up apt files
 RUN apt-get autoremove -y --purge && \
@@ -37,22 +33,13 @@ RUN apt-get autoremove -y --purge && \
     rm -rf /var/lib/apt/lists/* && \
     rm -rf /var/cache/apt/archives/*
 
-# Ensure that CUDA paths are available
-ENV PATH /usr/local/cuda/bin:${PATH}
-ENV LD_LIBRARY_PATH /usr/local/cuda/lib64:${LD_LIBRARY_PATH}
-
-# List the version of CUDA that we have installed
-RUN nvcc -V && \
-    which nvidia-smi && \
-    nvidia-smi 2> /dev/null || echo "No NVidia card detected!"
-
 # Install Julia kernel then list all available kernels
 RUN julia -e 'using Pkg; Pkg.add("IJulia");' && \
     mv /root/.local/share/jupyter/kernels/julia-* /usr/local/share/jupyter/kernels && \
     jupyter kernelspec list
 
-# Install packages into system Python: tensorflow, Theano, Keras and PyTorch
-RUN pip3 install tensorflow>2.0 theano keras torch --no-binary :all:
+# Install packages into system Python: Theano, Keras and PyTorch
+RUN pip3 install theano keras torch
 
 # Add tests for installed Python packages
 COPY tests /tests
