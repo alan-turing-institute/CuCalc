@@ -1,8 +1,5 @@
-Dockerfile.cocalc:
-	wget https://raw.githubusercontent.com/sagemathinc/cocalc-docker/master/Dockerfile -O Dockerfile.cocalc
-
-Dockerfile.cucalc: Dockerfile.cocalc
-	sed 's|^FROM ubuntu:20.04|FROM tensorflow/tensorflow:latest-gpu|' Dockerfile.cocalc > Dockerfile.cucalc
+Dockerfile.cucalc:
+	sed 's|^FROM ubuntu:20.04|FROM tensorflow/tensorflow:latest-gpu|' ./cocalc-docker/Dockerfile > Dockerfile
 
 build: Dockerfile.cucalc
-	docker build -t cucalc -f Dockerfile.cucalc .
+	docker build -t cucalc -f Dockerfile ./cocalc-docker
