@@ -4,3 +4,6 @@ Dockerfile.cucalc:
 
 build: Dockerfile.cucalc
 	docker build -t cucalc -f Dockerfile ./cocalc-docker
+
+test: build
+	docker run -v ./tests:/tests --gpus all cucalc /tests/run_all.sh
