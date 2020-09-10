@@ -1,11 +1,8 @@
-build:
-	docker build -t smc_cuda .
-run:
-	mkdir -p ~/cocalc/ && docker run --runtime=nvidia -e NVIDIA_VISIBLE_DEVICES=all --name cucalc -v ~/cocalc:/projects -p 443:443 smc_cuda &
-start:
-	sudo docker start cucalc
-stop:
-	sudo docker stop cucalc
-rm:
-	sudo docker rm cucalc
+Dockerfile.cocalc:
+	wget https://raw.githubusercontent.com/sagemathinc/cocalc-docker/master/Dockerfile -O Dockerfile.cocalc
 
+Dockerfile.cucalc: Dockerfile.cocalc
+	sed 's|^FROM ubuntu:20.04|FROM tensorflow/tensorflow:latest-gpu|' Dockerfile.cocalc > Dockerfile.cucalc
+
+build: Dockerfile.cucalc
+	docker build -t cucalc -f Dockerfile.cucalc .
