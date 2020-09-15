@@ -8,3 +8,6 @@ build: Dockerfile.cucalc
 
 test: build
 	docker run -v "$$(pwd)/tests":/tests --gpus all cucalc /tests/run_all.sh
+
+clean:
+	rm Dockerfile

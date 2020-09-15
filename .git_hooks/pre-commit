@@ -1,3 +1,12 @@
-#!/bin/sh
+#!/bin/bash
+exec 1>/dev/null
+
+GIT_ROOT=$(git rev-parse --show-toplevel)
+pushd "$GIT_ROOT"
+
+make clean
 make Dockerfile.cucalc
+
 git add ':(top)Dockerfile'
+
+popd
