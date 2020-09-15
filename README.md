@@ -35,3 +35,12 @@ Run the set of tests in `tests` with
 ```
 $ make test
 ```
+
+## Developing
+This repository contains a Git hook to build and add a `Dockerfile` upon each
+commit. The hook is located in `.git_hooks`. To make sure this hook is run
+whenever you commit, set this directory as your hooks path
+
+```
+$ git config core.hooksPath .git_hooks
+```
