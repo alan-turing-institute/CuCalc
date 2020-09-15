@@ -1,0 +1,3 @@
+#!/bin/sh
+make Dockerfile.cucalc
+git add ':(top)Dockerfile'
