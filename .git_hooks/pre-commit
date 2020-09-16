@@ -5,7 +5,7 @@ GIT_ROOT=$(git rev-parse --show-toplevel)
 pushd "$GIT_ROOT"
 
 make clean
-make Dockerfile.cucalc
+make Dockerfile
 
 git add ':(top)Dockerfile'
 
