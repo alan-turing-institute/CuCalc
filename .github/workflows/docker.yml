@@ -16,6 +16,12 @@ jobs:
         with:
           submodules: true
 
+      - name: Ensure Dockerfile is up to date
+        run: |
+          mv Dockerfile Dockerfile.bak
+          make Dockerfile
+          cmp Dockerfile Dockerfile.bak
+
       - name: Build the Docker image
         run: make build
 
