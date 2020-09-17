@@ -15,7 +15,7 @@ CUDA support and the following machine learning applications
 - [Nvidia Docker](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
 
 ## Building
-Clone this repository *and* the cocalc-docker subrepository
+Clone this repository *and* the `cocalc-docker` submodule
 
 ```
 $ git clone https://github.com/alan-turing-institute/CuCalc --recurse-submodules
