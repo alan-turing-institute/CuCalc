@@ -1,6 +1,6 @@
 # CuCalc = CUDA + CoCalc Docker container
 
-CoCalc rebased ontop of tensorflow and cuda.
+CoCalc rebased on top of tensorflow and CUDA.
 
 This repository contains a recipe to make a CoCalc container image that adds
 CUDA support and the following machine learning applications
