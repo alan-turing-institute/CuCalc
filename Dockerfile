@@ -223,6 +223,8 @@ COPY kernels/ir/Rprofile.site /usr/local/sage/local/lib/R/etc/Rprofile.site
 RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && locale-gen
 
 # Install IJulia kernel
+RUN julia -e 'ENV["JUPYTER"] = "/usr/local/bin/jupyter"; ENV["JULIA_PKGDIR"] = "/opt/julia/share/julia/site"; using Pkg; Pkg.add("IJulia");' \ 
+  && mv /root/.local/share/jupyter/kernels/julia-* /usr/local/share/jupyter/kernels
 #RUN echo '\
 #ENV["JUPYTER"] = "/usr/local/bin/jupyter"; \
 #ENV["JULIA_PKGDIR"] = "/opt/julia/share/julia/site"; \
