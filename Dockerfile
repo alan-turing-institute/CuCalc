@@ -1,6 +1,6 @@
 FROM tensorflow/tensorflow:latest-gpu
 
-MAINTAINER William Stein <wstein@sagemath.com>
+LABEL maintainer="researchengineering@turing.ac.uk"
 
 USER root
 
