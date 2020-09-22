@@ -1,0 +1,3 @@
+[submodule "cocalc-docker"]
+	path = cocalc-docker
+	url = https://github.com/sagemathinc/cocalc-docker

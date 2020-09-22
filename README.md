@@ -1,26 +1,46 @@
 # CuCalc = CUDA + CoCalc Docker container
 
-This is Docker container build on top of CoCalc image (https://github.com/sagemathinc/cocalc-docker) to add support of CUDA for GPU programming. My use is running it on my dedicated desktop computer with GPU and access from laptop anywhere.
+CoCalc rebased on top of tensorflow and CUDA.
 
-Also added some useful packages missing from CoCalc Docker but present in the CoCalc.com, such as Anaconda.
+This repository contains a recipe to make a CoCalc container image that adds
+CUDA support and the following machine learning applications
 
-Prerequisites:
-+ Docker
-+ nvidia-docker (https://github.com/NVIDIA/nvidia-docker).
+- Keras
+- PyTorch
+- Tensorflow
+- Theano
 
-To build image, type
+## Dependencies
+- sed (*should* work with either GNU or BSD)
+- [Nvidia Docker](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
 
-    sudo make build
-    
-To run container, type
+## Building
+Clone this repository *and* the `cocalc-docker` submodule
 
-    sudo make run
-    
-To stop container, type
+```
+$ git clone https://github.com/alan-turing-institute/CuCalc --recurse-submodules
+```
 
-    sudo make stop
-    
-To start again, type
+Build the container image
 
-    sudo make start
-    
+```
+$ make build
+```
+
+CoCalc downloads and installs a large set of packages. As a result building the
+container may take approximately an hour to finish.
+
+Run the set of tests in `tests` with
+
+```
+$ make test
+```
+
+## Developing
+This repository contains a Git hook to update the `Dockerfile` upon each
+commit. The hook is located in `.git_hooks`. To make sure this hook is run
+whenever you commit, set this directory as your hooks path
+
+```
+$ git config core.hooksPath .git_hooks
+```
