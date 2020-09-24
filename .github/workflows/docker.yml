@@ -3,13 +3,14 @@ name: Docker CI
 
 on:
   push:
-    branches: master
     tags: 'v*'
   pull_request:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    if: github.event_name == 'pull_request'
 
     steps:
       - uses: actions/checkout@v2
@@ -37,13 +38,13 @@ jobs:
         with:
           submodules: true
 
-      - name: Login to DockerHub
-        run: echo ${{ secrets.DH_ACCESS_TOKEN }} | docker login -u ${{ secrets.DH_USERNAME }} --password-stdin
-
       - name: Build the Docker image
         run: make build
 
-      - name: Push image to GitHub Container Registry
+      - name: Login to DockerHub
+        run: echo ${{ secrets.DH_ACCESS_TOKEN }} | docker login -u ${{ secrets.DH_USERNAME }} --password-stdin
+
+      - name: Push image to DockerHub
         run: |
           # Strip git ref prefix from version
           VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
@@ -51,10 +52,10 @@ jobs:
           # Strip "v" prefix from tag name
           [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
 
-          # Use Docker `latest` tag convention
-          [ "$VERSION" == "master" ] && VERSION=latest
-
-          echo VERSION=$VERSION
-
+          echo "pushing tag $VERSION"
           docker tag cucalc turinginst/cucalc:$VERSION
           docker push turinginst/cucalc:$VERSION
+
+          echo "pushing tag latest"
+          docker tag cucalc turinginst/cucalc:latest
+          docker push turinginst/cucalc:latest
